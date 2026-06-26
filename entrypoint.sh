@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # ============================================================
 # Entrypoint Script - Evolution API com Migrations
@@ -11,28 +11,15 @@
 set -e
 
 echo "[Evolution API] Iniciando com migrations automáticas..."
-echo "[Evolution API] DATABASE_CONNECTION_URI: $DATABASE_CONNECTION_URI"
+echo "[Evolution API] DATABASE_URL: $DATABASE_URL"
 
-# Aguarda PostgreSQL estar disponível
-echo "[Evolution API] Aguardando PostgreSQL..."
-until PGPASSWORD=$POSTGRES_PASSWORD psql -h ${DATABASE_HOST:-localhost} -U ${DATABASE_USER:-postgres} -d ${DATABASE_NAME:-evolution} -c "\q" 2>/dev/null; do
-  echo "[Evolution API] PostgreSQL indisponível, aguardando..."
-  sleep 2
-done
-
-echo "[Evolution API] PostgreSQL conectado ✓"
-
-# Tenta rodar migrations
-echo "[Evolution API] Executando Prisma migrations..."
-if [ -f "/evolution/prisma/schema.prisma" ]; then
-  cd /evolution
-  npm run db:migrate 2>&1 || true
-  echo "[Evolution API] Migrations concluídas ✓"
-else
-  echo "[Evolution API] Schema Prisma não encontrado em /evolution/prisma/"
-  echo "[Evolution API] Continuando sem migrations explícitas..."
+# Se DATABASE_URL não estiver setada, tenta construir de variáveis individuais
+if [ -z "$DATABASE_URL" ]; then
+  DATABASE_URL="postgresql://${DATABASE_USER:-postgres}:${DATABASE_PASSWORD:-postgres}@${DATABASE_HOST:-localhost}:${DATABASE_PORT:-5432}/${DATABASE_NAME:-evolution}"
+  echo "[Evolution API] DATABASE_URL construída: $DATABASE_URL"
 fi
 
 # Inicia o Evolution API
 echo "[Evolution API] Iniciando servidor Evolution API na porta 8080..."
-exec node dist/main
+echo "[Evolution API] Deixando Prisma criar as tabelas automaticamente..."
+exec npm run start:prod
