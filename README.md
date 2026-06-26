@@ -1,97 +1,85 @@
 # Evolution API - Operacional Viana
 
-Deployment do Evolution API com PostgreSQL e Redis para Operacional Viana.
+Deployment do Evolution API com PostgreSQL e Redis (Add-ons do Railway) para Operacional Viana.
 
-## Componentes
+## Stack
 
 - **Evolution API v2.3.7** - WhatsApp integration API
-- **PostgreSQL 15** - Database
-- **Redis 7** - Cache layer
+- **PostgreSQL 15** - Database (Add-on do Railway)
+- **Redis 7** - Cache layer (Add-on do Railway)
 
-## Variáveis de Ambiente
+## Como foi deployado
 
-Configure no Railway antes de fazer deploy:
+1. Dockerfile simples que aponta para imagem oficial do Evolution API
+2. PostgreSQL e Redis adicionados como Add-ons do Railway (gerenciados automaticamente)
+3. Variáveis de ambiente configuradas no painel do Railway
 
-```env
-# API
+## Variáveis de Ambiente Necessárias
+
+Configure no Railway em **Variables**:
+
+```
 API_KEY=akh8wh3pze0v6f3oc3m55l
 SERVER_URL=https://seu-app-prod-xyz.railway.app
-
-# Database
-DB_USER=evolution
-DB_PASSWORD=evolution123
-DB_NAME=evolution
 ```
 
-## Como fazer Deploy no Railway
+**Automáticas (criadas pelos Add-ons):**
+- `DATABASE_URL` - PostgreSQL (criado automaticamente)
+- `REDIS_URL` - Redis (criado automaticamente)
 
-### 1. Criar repositório no GitHub
+## Acessar Evolution API
 
-```bash
-# Na pasta evolution-api-prod
-git init
-git add .
-git commit -m "Deployment inicial Evolution API"
-git remote add origin https://github.com/seu-usuario/evolution-api-prod.git
-git branch -M main
-git push -u origin main
-```
-
-### 2. Fazer Deploy no Railway
-
-1. Vá em **railway.app**
-2. Clique **New Project** → **Deploy from GitHub**
-3. Selecione seu repositório `evolution-api-prod`
-4. Railway detecta `docker-compose.yml` automaticamente
-5. Clique **Deploy**
-
-### 3. Configurar Variáveis de Ambiente
-
-Após o deploy iniciar:
-
-1. Vá em **Project** → seu projeto
-2. Clique em **Variables**
-3. Adicione as variáveis:
-   - `API_KEY=akh8wh3pze0v6f3oc3m55l`
-   - `SERVER_URL=https://seu-app-prod-xyz.railway.app` (substitua pela URL do Railway)
-   - `DB_USER=evolution`
-   - `DB_PASSWORD=evolution123`
-   - `DB_NAME=evolution`
-
-### 4. Acessar Painel da Evolution API
-
-Após deploy bem-sucedido:
+Após deployment:
 
 ```
 https://seu-app-prod-xyz.railway.app:8080
 ```
 
-## Rodar Localmente
-
-```bash
-docker-compose up -d
-```
-
-Acesse em `http://localhost:8080`
+Você ve o painel completo da Evolution API.
 
 ## Portas
 
 - Evolution API: `8080`
-- PostgreSQL: `5432`
-- Redis: `6379`
 
-## URLs de Serviço (Internal)
-
-- Evolution API: `http://evolution-api:8080`
-- PostgreSQL: `postgresql://evolution:evolution123@evolution-postgres:5432/evolution`
-- Redis: `redis://evolution-redis:6379`
-
-## Notas para n8n
-
-No seu workflow n8n.io, use:
+## URLs Internas (para n8n)
 
 ```
 https://seu-app-prod-xyz.railway.app:8080/message/sendText/operacionalViana-prod
 ```
 
-Substitua `seu-app-prod-xyz` pela URL real que Railway te der.
+## Integração com n8n.io
+
+No seu workflow `Gutim` no n8n.io, configure a URL:
+
+```
+POST https://seu-app-prod-xyz.railway.app:8080/message/sendText/operacionalViana-prod
+```
+
+Headers:
+```
+apikey: akh8wh3pze0v6f3oc3m55l
+```
+
+## Estrutura de Arquivos
+
+```
+evolution-api-prod/
+├── Dockerfile          (imagem do Evolution API)
+├── railway.json        (configuração do Railway)
+├── README.md           (este arquivo)
+└── .gitignore          (arquivos ignorados)
+```
+
+## Deploy Local (para testes)
+
+```bash
+docker build -t evolution-api .
+docker run -p 8080:8080 evolution-api
+```
+
+## Troubleshooting
+
+Se houver problema de conexão com PostgreSQL/Redis:
+1. Verifique se os Add-ons estão "Online" no painel do Railway
+2. Confirme que `DATABASE_URL` e `REDIS_URL` estão nas Variables
+3. Verifique os logs em **Deploy Logs** no painel do Railway
